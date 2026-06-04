@@ -11,7 +11,7 @@ Demo-Vue.exe
 config.json
 
 # 日志文件
-logs/
+/logs/
 *.log
 
 # 前端工程源码已纳入同仓维护（仅忽略依赖/环境/产物）
