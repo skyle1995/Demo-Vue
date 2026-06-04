@@ -1,0 +1,259 @@
+# Demo-Vue
+
+> 基于 Go (Gin) + Vue 3 的全栈管理后台脚手架，前端静态资源通过 `go:embed` 嵌入编译为单二进制部署。
+
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
+[![Vue Version](https://img.shields.io/badge/Vue-3.5+-4FC08D?logo=vue.js)](https://vuejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6?logo=typescript)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-7.1+-646CFF?logo=vite)](https://vitejs.dev)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+
+---
+
+## 功能特性
+
+| 分类 | 特性 |
+|---|---|
+| 认证与鉴权 | JWT 双 Token（Access + Refresh）、一次一换、重用检测、会话绝对过期、密码变更自动失效 |
+| 用户管理 | 超级管理员 / 子账号、账号状态（启用/禁用）、角色分级 |
+| 系统设置 | 数据库驱动的键值配置、缓存层、运行时热更新 |
+| 门户导航 | 树形导航结构、分组/链接、首页动态标记、排序与显隐控制 |
+| 安全措施 | 图形验证码、CSRF 防护、登录日志、操作审计日志 |
+| 中间件 | CORS、限速（令牌桶）、维护模式、开发模式快捷入口 |
+| 前端框架 | Vue 3 Composition API + TypeScript、Element Plus、Tailwind CSS、ECharts、Pinia |
+| 构建与部署 | 跨平台交叉编译（Windows / Linux / macOS）、`go:embed` 前端嵌入、一键构建脚本 |
+
+---
+
+## 技术栈
+
+| 层 | 技术 |
+|---|---|
+| 后端框架 | [Gin](https://github.com/gin-gonic/gin) v1.11 |
+| ORM | [GORM](https://gorm.io) v1.30 + SQLite / MySQL |
+| CLI | [Cobra](https://github.com/spf13/cobra) |
+| 配置 | [Viper](https://github.com/spf13/viper) |
+| 认证 | [golang-jwt](https://github.com/golang-jwt/jwt) v5 |
+| 验证码 | [base64Captcha](https://github.com/mojocn/base64Captcha) |
+| 日志 | [Logrus](https://github.com/sirupsen/logrus) + [lumberjack](https://github.com/natefinch/lumberjack) |
+| 前端脚手架 | [pure-admin-thin](https://github.com/pure-admin/pure-admin-thin) v6.2 |
+| UI 组件 | [Element Plus](https://element-plus.org) v2.11 |
+| 图表 | [ECharts](https://echarts.apache.org) v6 |
+| 构建 | Vite v7 + pnpm |
+
+---
+
+## 项目结构
+
+```
+Demo-Vue/
+├── main.go                  # 入口：go:embed 前端 + Cobra 启动
+├── cmd/                     # Cobra 命令（server 子命令）
+├── server/                  # 路由注册、前端静态资源分发
+│   ├── routes.go            # API 路由 + SPA 兜底
+│   ├── admin.go             # 后台路由
+│   ├── default.go           # 公开路由
+│   └── install.go           # 安装引导路由
+├── controllers/             # 控制器（请求处理）
+│   ├── admin/               # 后台接口
+│   │   ├── auth.go          # 登录/登出/刷新 Token
+│   │   ├── dashboard.go     # 仪表盘统计
+│   │   ├── settings.go      # 系统设置 CRUD
+│   │   ├── portal_navigation.go  # 门户导航管理
+│   │   ├── log.go           # 日志查询
+│   │   ├── profile.go       # 个人资料
+│   │   ├── captcha.go       # 验证码
+│   │   └── utils.go         # 工具接口（如 Excel 导出）
+│   ├── default/             # 公开接口
+│   └── install/             # 安装向导
+├── models/                  # 数据模型（GORM）
+│   ├── user.go              # 用户
+│   ├── settings.go          # 系统设置
+│   ├── portal_navigation.go # 门户导航
+│   ├── refresh_token.go     # 刷新令牌持久化
+│   ├── login_log.go         # 登录日志
+│   └── operation_log.go     # 操作日志
+├── services/                # 业务逻辑层
+│   ├── settings.go          # 设置缓存服务
+│   ├── portal_navigation.go # 导航规范化
+│   ├── refresh_token.go     # Token 族管理
+│   ├── operation_log.go     # 操作日志记录
+│   └── log_cleanup.go       # 日志清理
+├── database/                # 数据库初始化与迁移
+├── middleware/               # 中间件（CORS、限速、维护模式等）
+├── utils/                   # 工具集（加密、验证码、日志、Excel）
+├── config/                  # Viper 配置加载
+├── constants/               # 应用常量（版本号等）
+├── docs/                    # 技术文档
+├── frontend/                # 前端工程（Vue 3 + Vite）
+│   ├── src/
+│   │   ├── views/           # 页面组件
+│   │   ├── router/          # 路由配置
+│   │   ├── store/           # Pinia 状态管理
+│   │   ├── api/             # 后端 API 封装
+│   │   ├── layout/          # 布局组件
+│   │   ├── components/      # 公共组件
+│   │   ├── utils/           # 前端工具函数
+│   │   └── style/           # 全局样式
+│   └── vite.config.ts       # Vite 构建配置
+├── build.sh                 # 一键构建脚本
+├── config.json              # 默认配置文件（本地调试用，不入库）
+├── CHANGELOG.md             # 变更日志
+└── LICENSE
+```
+
+---
+
+## 快速开始
+
+### 环境要求
+
+| 依赖 | 版本 |
+|---|---|
+| Go | >= 1.25 |
+| Node.js | ^20.19 \|\| >= 22.13 |
+| pnpm | >= 9 |
+
+数据库默认使用 **SQLite**（零配置），无需额外安装。可选 MySQL 或 Redis（见配置说明）。
+
+### 克隆并启动
+
+```bash
+# 克隆仓库
+git clone https://hub.ifunx.com/skyle1995/Demo-Vue.git
+cd Demo-Vue
+
+# 安装前端依赖
+cd frontend && pnpm install && cd ..
+
+# 构建前端（产物到 frontend/dist）
+cd frontend && pnpm build && cd ..
+
+# 启动后端
+go run main.go server
+```
+
+访问 `http://localhost:8080` 进入管理后台。
+
+### 默认配置
+
+服务启动前请在项目根目录下准备 `config.json`：
+
+```json
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "dist": "",
+    "dev_mode": true,
+    "access_log": true
+  },
+  "database": {
+    "type": "sqlite",
+    "sqlite": { "path": "database.db" }
+  },
+  "log": {
+    "level": "info",
+    "file": ""
+  }
+}
+```
+
+- `server.dist`：设为空字符串使用 `go:embed` 嵌入前端；设为 `http://localhost:5173` 可反向代理到前端开发服务器。
+- `database.type`：支持 `sqlite` 或 `mysql`。
+- 首次启动后会自动建表与初始化默认设置。
+
+---
+
+## 构建部署
+
+### 使用构建脚本
+
+```bash
+chmod +x build.sh
+./build.sh
+```
+
+菜单选项：
+
+- **自动构建 + 生成更新包**：自动迭代版本号、编译前端、交叉编译后端、打包 zip
+- **全部构建**：前端 + 所有平台后端
+- **仅编译前端**：单独构建 Vue 前端
+
+### 手动交叉编译
+
+```bash
+# 编译前端
+cd frontend && pnpm build && cd ..
+
+# 编译后端（示例：Linux amd64）
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath --ldflags="-s -w" -o dist/linux_amd64/Demo-Vue
+
+# 产物即为包含前端的单二进制文件
+```
+
+### 产物结构
+
+```
+dist/
+├── linux_amd64/Demo-Vue
+├── linux_arm64/Demo-Vue
+├── darwin_amd64/Demo-Vue
+├── darwin_arm64/Demo-Vue
+├── windows_amd64/Demo-Vue.exe
+└── packages/               # zip 更新包（含 SHA256 校验）
+```
+
+---
+
+## 认证机制
+
+> 详细说明见 [docs/JWT-AUTH.md](./docs/JWT-AUTH.md)
+
+- Access Token 有效期 2 小时（可配置），Refresh Token 有效期 7 天（可配置）
+- 刷新时执行一次一换：旧 Token 即行撤销，分配新 Token
+- 重复使用已撤销 Token 将触发整族销毁（防泄露攻击）
+- 密码变更后所有现存 Token 立即失效
+- 会话绝对过期上限 30 天，超时强制重新登录
+
+---
+
+## 配置项
+
+通过在 Web 后台"系统设置"页面或数据库 `settings` 表动态配置（修改后即时生效）：
+
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `jwt_secret` | 随机生成 | JWT 签名密钥 |
+| `jwt_expire` | 2h | Access Token 有效期 |
+| `refresh_token_expire_days` | 7d | Refresh Token 有效期 |
+| `session_absolute_expire_days` | 30d | 会话绝对过期上限 |
+| `refresh_advance_seconds` | 60s | 前端提前刷新阈值 |
+
+---
+
+## 开发说明
+
+### 前端热重载
+
+```bash
+# 启动前端开发服务器
+cd frontend && pnpm dev
+
+# 配置 config.json 中 server.dist = "http://localhost:5173"
+# 后端会将非 /api 请求反向代理到 Vite 开发服务器
+go run main.go server
+```
+
+### 项目约定
+
+- 强制使用 Composition API（`<script setup>`）与 TypeScript
+- 控制器层仅做参数校验与响应，业务逻辑下沉至 `services/`
+- 测试文件统一放入 `./demo-test/` 目录
+- 提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org)
+
+---
+
+## License
+
+MIT © 2025 skyle1995
