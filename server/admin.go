@@ -2,6 +2,8 @@ package server
 
 import (
 	adminctl "Demo/controllers/admin"
+	"Demo/middleware"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,10 +13,12 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 	admin := rg.Group("/admin")
 
 	// Admin 认证相关路由
-	admin.GET("/captcha", adminctl.CaptchaHandler)
+	// 登录、刷新令牌、验证码等未鉴权入口加 IP 级限流，缓解暴力破解
+	// （限流依赖 Redis，Redis 不可用时自动降级放行）
+	admin.GET("/captcha", middleware.RateLimit(30, time.Minute), adminctl.CaptchaHandler)
 	admin.GET("/csrf", adminctl.CSRFTokenHandler)
-	admin.POST("/login", adminctl.LoginHandler)
-	admin.POST("/refresh-token", adminctl.RefreshTokenHandler)
+	admin.POST("/login", middleware.RateLimit(10, time.Minute), adminctl.LoginHandler)
+	admin.POST("/refresh-token", middleware.RateLimit(30, time.Minute), adminctl.RefreshTokenHandler)
 
 	// 公开设置API
 	admin.GET("/settings/public", adminctl.SettingsPublicHandler)
