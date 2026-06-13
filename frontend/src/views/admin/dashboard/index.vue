@@ -127,7 +127,7 @@ onUnmounted(() => {
   <div>
     <el-row :gutter="20" class="mt-4">
       <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
-        <el-card shadow="hover" class="mb-4">
+        <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>基本信息</span>
@@ -163,7 +163,7 @@ onUnmounted(() => {
       </el-col>
 
       <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
-        <el-card shadow="hover" class="mb-4">
+        <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>运行状态</span>
