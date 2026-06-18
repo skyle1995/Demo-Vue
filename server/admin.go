@@ -57,5 +57,16 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 
 		// 子账号相关API (Mock)
 		authorized.GET("/subaccounts/simple", adminctl.SubAccountSimpleListHandler)
+
+		// API 密钥库管理
+		apikeyGroup := authorized.Group("/apikey")
+		{
+			apikeyGroup.GET("/scopes", adminctl.GetApiKeyScopes)
+			apikeyGroup.GET("/list", adminctl.GetApiKeyList)
+			apikeyGroup.POST("/create", adminctl.CreateApiKey)
+			apikeyGroup.PUT("/update", adminctl.UpdateApiKey)
+			apikeyGroup.POST("/regenerate", adminctl.RegenerateApiKey)
+			apikeyGroup.DELETE("/delete/:id", adminctl.DeleteApiKey)
+		}
 	}
 }
