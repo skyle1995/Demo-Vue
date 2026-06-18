@@ -52,8 +52,10 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 		// 日志管理API
 		authorized.GET("/login_logs", adminctl.LoginLogsListHandler)
 		authorized.POST("/login_logs/clear", adminctl.LoginLogsClearHandler)
+		authorized.POST("/login_logs/batch-delete", adminctl.LoginLogsBatchDeleteHandler)
 		authorized.GET("/logs", adminctl.LogsListHandler)
 		authorized.POST("/logs/clear", adminctl.LogsClearHandler)
+		authorized.POST("/logs/batch-delete", adminctl.LogsBatchDeleteHandler)
 
 		// 子账号相关API (Mock)
 		authorized.GET("/subaccounts/simple", adminctl.SubAccountSimpleListHandler)

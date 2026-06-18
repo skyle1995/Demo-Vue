@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import dayjs from "dayjs";
 import { useRole } from "./hook";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import { useUserStoreHook } from "@/store/modules/user";
+import { useSmartExport } from "@/composables/useSmartExport";
+import { useSmartDelete } from "@/composables/useSmartDelete";
+import { clearOperationLogs, batchDeleteOperationLogs } from "@/api/admin/logs";
 
 defineOptions({
   name: "OperationLog"
@@ -19,12 +23,44 @@ const {
   columns,
   dataList,
   pagination,
+  selectedRows,
   onSearch,
-  clearAll,
   resetForm,
+  handleSelectionChange,
   handleSizeChange,
   handleCurrentChange
 } = useRole();
+
+// 智能导出：勾选 → 导出选中；未勾选 → 导出当前筛选页（CSV）
+const { exporting, handleExport } = useSmartExport({
+  filename: "operation_logs",
+  columns: [
+    { prop: "id", label: "序号" },
+    { prop: "operator", label: "操作人员" },
+    { prop: "operator_uuid", label: "操作人员 UUID" },
+    {
+      prop: "created_at",
+      label: "操作时间",
+      formatter: (r: any) => dayjs(r.created_at).format("YYYY-MM-DD HH:mm:ss")
+    },
+    { prop: "operation_type", label: "操作方式" },
+    { prop: "details", label: "操作详情" }
+  ],
+  getSelected: () => selectedRows.value,
+  getFallback: () => dataList.value
+});
+
+// 智能删除：勾选 → 批量删除；未勾选 → 清空全部（高危确认）
+const { deleting, handleDelete } = useSmartDelete({
+  entityName: "操作日志",
+  getSelectedIds: () => selectedRows.value.map((r: any) => r.id),
+  batchDelete: ids => batchDeleteOperationLogs(ids),
+  clearAll: () => clearOperationLogs(),
+  onDone: () => {
+    selectedRows.value = [];
+    onSearch();
+  }
+});
 </script>
 
 <template>
@@ -70,9 +106,26 @@ const {
     </el-form>
 
     <PureTableBar title="操作日志" :columns="columns" @refresh="onSearch">
-      <template #buttons v-if="userStore.roles.includes('super_admin')">
-        <el-button type="danger" :icon="useRenderIcon('ep:delete')" @click="clearAll">
-          清空日志
+      <template #buttons>
+        <el-button
+          :icon="useRenderIcon('ep:download')"
+          :loading="exporting"
+          @click="handleExport"
+        >
+          {{
+            selectedRows.length ? `导出选中(${selectedRows.length})` : "导出筛选"
+          }}
+        </el-button>
+        <el-button
+          v-if="userStore.roles.includes('super_admin')"
+          type="danger"
+          :icon="useRenderIcon('ep:delete')"
+          :loading="deleting"
+          @click="handleDelete"
+        >
+          {{
+            selectedRows.length ? `删除选中(${selectedRows.length})` : "清空日志"
+          }}
         </el-button>
       </template>
       <template v-slot="{ size, dynamicColumns }">
@@ -86,6 +139,7 @@ const {
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
+          @selection-change="handleSelectionChange"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
             color: 'var(--el-text-color-primary)'

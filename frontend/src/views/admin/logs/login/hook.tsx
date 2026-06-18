@@ -13,6 +13,13 @@ export function useRole() {
   });
   const dataList = ref([]);
   const loading = ref(true);
+  // 当前勾选的行（供智能导出/智能删除使用）
+  const selectedRows = ref([]);
+
+  /** pure-table 多选变化回调 */
+  function handleSelectionChange(rows) {
+    selectedRows.value = rows;
+  }
 
   const pagination = reactive<PaginationProps>({
     total: 0,
@@ -21,6 +28,12 @@ export function useRole() {
     background: true
   });
   const columns: TableColumnList = [
+    {
+      type: "selection",
+      width: 55,
+      align: "center",
+      reserveSelection: true
+    },
     {
       label: "序号",
       prop: "id",
@@ -140,9 +153,11 @@ export function useRole() {
     columns,
     dataList,
     pagination,
+    selectedRows,
     onSearch,
     clearAll,
     resetForm,
+    handleSelectionChange,
     handleSizeChange,
     handleCurrentChange
   };
