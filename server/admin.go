@@ -20,10 +20,6 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 	admin.POST("/login", middleware.RateLimit(10, time.Minute), adminctl.LoginHandler)
 	admin.POST("/refresh-token", middleware.RateLimit(30, time.Minute), adminctl.RefreshTokenHandler)
 
-	// 公开设置API
-	admin.GET("/settings/public", adminctl.SettingsPublicHandler)
-	admin.GET("/portal-navigation/public", adminctl.PortalNavigationPublicListHandler)
-
 	// 退出登录
 	admin.POST("/logout", adminctl.LogoutHandler)
 
@@ -44,10 +40,10 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 		authorized.GET("/settings", adminctl.SettingsQueryHandler)
 		authorized.POST("/settings/update", adminctl.SettingsUpdateHandler)
 		authorized.POST("/settings/generate-key", adminctl.SettingsGenerateKeyHandler)
-		authorized.GET("/portal-navigation", adminctl.PortalNavigationListHandler)
-		authorized.POST("/portal-navigation/create", adminctl.PortalNavigationCreateHandler)
-		authorized.POST("/portal-navigation/update", adminctl.PortalNavigationUpdateHandler)
-		authorized.POST("/portal-navigation/delete", adminctl.PortalNavigationDeleteHandler)
+		authorized.GET("/navigation", adminctl.PortalNavigationListHandler)
+		authorized.POST("/navigation/create", adminctl.PortalNavigationCreateHandler)
+		authorized.POST("/navigation/update", adminctl.PortalNavigationUpdateHandler)
+		authorized.POST("/navigation/delete", adminctl.PortalNavigationDeleteHandler)
 
 		// 日志管理API
 		authorized.GET("/login_logs", adminctl.LoginLogsListHandler)
