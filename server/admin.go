@@ -16,6 +16,12 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 	// 登录、刷新令牌、验证码等未鉴权入口加 IP 级限流，缓解暴力破解
 	// （限流依赖 Redis，Redis 不可用时自动降级放行）
 	admin.GET("/captcha", middleware.RateLimit(30, time.Minute), adminctl.CaptchaHandler)
+	// 验证码类型 + 滑动拼图验证码（未鉴权入口，同样加 IP 级限流）
+	admin.GET("/captcha/type", adminctl.CaptchaTypeHandler)
+	admin.GET("/captcha/slide", middleware.RateLimit(30, time.Minute), adminctl.SlideCaptchaHandler)
+	admin.POST("/captcha/slide/verify", middleware.RateLimit(60, time.Minute), adminctl.SlideCaptchaVerifyHandler)
+	admin.GET("/captcha/click", middleware.RateLimit(30, time.Minute), adminctl.ClickCaptchaHandler)
+	admin.POST("/captcha/click/verify", middleware.RateLimit(60, time.Minute), adminctl.ClickCaptchaVerifyHandler)
 	admin.GET("/csrf", adminctl.CSRFTokenHandler)
 	admin.POST("/login", middleware.RateLimit(10, time.Minute), adminctl.LoginHandler)
 	admin.POST("/refresh-token", middleware.RateLimit(30, time.Minute), adminctl.RefreshTokenHandler)
