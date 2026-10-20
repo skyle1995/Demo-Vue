@@ -60,8 +60,14 @@ func runServer(cmd *cobra.Command, args []string) {
 	if !viper.GetBool("server.dev_mode") {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
-		// 开发模式会跳过验证码校验并输出详细错误信息，严禁用于生产环境
-		logrus.Warn("⚠️  [安全警告] 开发模式 (server.dev_mode) 已开启：验证码校验被跳过、错误详情对外暴露，请勿在生产环境使用！")
+		// 开发模式会放宽部分校验并输出更详细的日志，严禁用于生产环境
+		logrus.Warn("⚠️  [安全警告] 开发模式 (server.dev_mode) 已开启：错误详情与调试日志对外暴露，请勿在生产环境使用！")
+	}
+
+	// 验证码跳过开关只允许通过配置文件中显式的 security.skip_captcha 开启，
+	// 不再与 dev_mode 联动，避免「开发模式配置遗留到生产」直接让验证码形同虚设。
+	if viper.GetBool("security.skip_captcha") {
+		logrus.Warn("⚠️  [严重安全警告] 已开启 security.skip_captcha：登录验证码校验被完全跳过，后台可被脚本无限次爆破！该选项仅限本地开发调试，生产环境必须删除或设为 false！")
 	}
 
 	// 初始化Redis（如果配置存在，失败不致命）
@@ -146,6 +152,12 @@ func getServerPort(cmd *cobra.Command) int {
 func createHTTPServer(addr string) *http.Server {
 	// 创建 Gin 引擎
 	r := gin.New()
+
+	// 配置受信任反向代理：未显式配置时禁用 X-Forwarded-For 解析，
+	// 防止客户端伪造 IP 绕过限流、污染登录日志（Gin 默认信任所有代理，必须显式纠正）。
+	if err := server.ConfigureTrustedProxies(r); err != nil {
+		logrus.WithError(err).Fatal("受信任反向代理配置失败，请检查 server.trusted_proxies")
+	}
 
 	// 使用默认的 Recovery 中间件
 	r.Use(gin.Recovery())

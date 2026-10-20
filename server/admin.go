@@ -14,15 +14,17 @@ func RegisterAdminRoutes(rg *gin.RouterGroup) {
 
 	// Admin 认证相关路由
 	// 登录、刷新令牌、验证码等未鉴权入口加 IP 级限流，缓解暴力破解
-	// （限流依赖 Redis，Redis 不可用时自动降级放行）
+	// （Redis 可用时多实例共享计数；不可用时自动降级为进程内限流，不会放行）
 	admin.GET("/captcha", middleware.RateLimit(30, time.Minute), adminctl.CaptchaHandler)
 	// 验证码类型 + 滑动拼图验证码（未鉴权入口，同样加 IP 级限流）
-	admin.GET("/captcha/type", adminctl.CaptchaTypeHandler)
+	admin.GET("/captcha/type", middleware.RateLimit(60, time.Minute), adminctl.CaptchaTypeHandler)
 	admin.GET("/captcha/slide", middleware.RateLimit(30, time.Minute), adminctl.SlideCaptchaHandler)
 	admin.POST("/captcha/slide/verify", middleware.RateLimit(60, time.Minute), adminctl.SlideCaptchaVerifyHandler)
 	admin.GET("/captcha/click", middleware.RateLimit(30, time.Minute), adminctl.ClickCaptchaHandler)
 	admin.POST("/captcha/click/verify", middleware.RateLimit(60, time.Minute), adminctl.ClickCaptchaVerifyHandler)
-	admin.GET("/csrf", adminctl.CSRFTokenHandler)
+	// CSRF 令牌接口同样限流（旧实现未限流，可被脚本无限批量取令牌）
+	admin.GET("/csrf", middleware.RateLimit(30, time.Minute), adminctl.CSRFTokenHandler)
+	// 登录：IP 级限流（10 次/分钟）之外，LoginHandler 内还有账号级失败锁定（services.LoginGuard）
 	admin.POST("/login", middleware.RateLimit(10, time.Minute), adminctl.LoginHandler)
 	admin.POST("/refresh-token", middleware.RateLimit(30, time.Minute), adminctl.RefreshTokenHandler)
 
