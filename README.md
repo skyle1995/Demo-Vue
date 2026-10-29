@@ -2,7 +2,7 @@
 
 > 基于 Go (Gin) + Vue 3 的全栈管理后台脚手架，前端静态资源通过 `go:embed` 嵌入编译为单二进制部署。
 
-[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
+[![Go Version](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go)](https://go.dev)
 [![Vue Version](https://img.shields.io/badge/Vue-3.5+-4FC08D?logo=vue.js)](https://vuejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite-7.1+-646CFF?logo=vite)](https://vitejs.dev)
@@ -110,7 +110,7 @@ Demo-Vue/
 
 | 依赖 | 版本 |
 |---|---|
-| Go | >= 1.25 |
+| Go | >= 1.26 |
 | Node.js | ^20.19 \|\| >= 22.13 |
 | pnpm | >= 9 |
 
