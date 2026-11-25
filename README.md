@@ -120,7 +120,7 @@ Demo-Vue/
 
 ```bash
 # 克隆仓库
-git clone https://hub.ifunx.com/skyle1995/Demo-Vue.git
+git clone https://github.com/skyle1995/Demo-Vue.git
 cd Demo-Vue
 
 # 安装前端依赖
@@ -345,7 +345,7 @@ git tag -a v1.2.3 <commit> -m "release: v1.2.3"
 git push origin v1.2.3
 ```
 
-如果远端已基于该 Tag 生成了 Release（例如 Gitea/GitHub Release），通常也需要同步删除并重新创建对应 Release，避免附件与版本信息不一致。
+如果远端已基于该 Tag 生成了 Release（例如 GitHub Release），通常也需要同步删除并重新创建对应 Release，避免附件与版本信息不一致。
 
 ---
 
@@ -357,7 +357,7 @@ git push origin v1.2.3
 
 | Secret 名称 | 说明 |
 |---|---|
-| `RELEASE_TOKEN` | Gitea 访问令牌，权限需包含 `repo`。用于自动创建 Release 并上传附件 |
+| `RELEASE_TOKEN` | GitHub 访问令牌（classic PAT），权限需包含 `repo`（公开仓库用 `public_repo` 亦可）。用于自动创建 Release 并上传附件；未配置时回退使用内置 `GITHUB_TOKEN` |
 
 ### 对象存储上传（可选，未配置则跳过）
 

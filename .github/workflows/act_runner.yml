@@ -1,5 +1,5 @@
 # =============================================================================
-# Act_Runner — Gitea Actions 工作流
+# Act_Runner — GitHub Actions 工作流
 # 用途: 提取 tag 版本 → 编译前端(1次) → 矩阵交叉编译后端 → 发布 Release
 # 触发: push tag v* / workflow_dispatch
 # =============================================================================
@@ -89,7 +89,7 @@ jobs:
             pnpm exec vite build
 
       - name: 上传前端产物
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: frontend/dist/
@@ -130,7 +130,7 @@ jobs:
             ext: ""
     steps:
       - name: 安装依赖 (nodejs + zip)
-        # nodejs：Gitea Actions 的 checkout/artifact 等 JS Action 需在容器内用 node 运行（golang 镜像不自带）
+        # nodejs：GitHub Actions 的 checkout/artifact 等 JS Action 需在容器内用 node 运行（golang 镜像不自带）
         # zip：打包用。Go 编译本身不需要 node（前端已 go:embed），故省去 npm
         run: |
           apt-get update -qq
@@ -139,7 +139,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: 下载前端产物
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-dist
           path: frontend/dist/
@@ -189,7 +189,7 @@ jobs:
           echo "✅ 包已生成: ${PKG_NAME}"
 
       - name: 上传包
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: package-${{ matrix.target.dir }}
           path: dist/packages/
@@ -197,12 +197,14 @@ jobs:
 
 
   # ==========================================
-  # Job 4: 发布 Gitea Release（仅 tag push）
+  # Job 4: 发布 GitHub Release（仅 tag push）
   # ==========================================
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [ prepare, build ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     container:
       image: node:22
     steps:
@@ -214,36 +216,38 @@ jobs:
           apt-get install -y -qq curl jq --no-install-recommends
 
       - name: 下载所有包
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: package-windows_amd64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-linux_arm64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-linux_amd64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-darwin_arm64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-darwin_amd64
           path: dist/packages/
 
-      - name: 创建 Gitea Release 并上传附件
+      - name: 创建 GitHub Release 并上传附件
         env:
-          GITEA_URL: ${{ github.server_url }}
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          API_URL: ${{ github.api_url }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
           RELEASE_UPLOAD_ASSETS: ${{ vars.RELEASE_UPLOAD_ASSETS }}
         run: |
           set -e
           VERSION="${{ needs.prepare.outputs.version }}"
           REPO="${{ github.repository }}"
+          TAG="${{ github.ref_name }}"
+          AUTH="Authorization: Bearer ${RELEASE_TOKEN}"
 
           # 项目变量 RELEASE_UPLOAD_ASSETS 为 false 时，不创建 Release 也不上传附件
           UPLOAD_ASSETS="${RELEASE_UPLOAD_ASSETS:-true}"
@@ -254,29 +258,31 @@ jobs:
 
           # 检查是否已有同名 Release
           HTTP_CODE=$(curl -s -o /tmp/release.json -w "%{http_code}" \
-            -H "Authorization: token ${RELEASE_TOKEN}" \
-            "${GITEA_URL}/api/v1/repos/${REPO}/releases/tags/${{ github.ref_name }}")
+            -H "${AUTH}" \
+            "${API_URL}/repos/${REPO}/releases/tags/${TAG}")
 
           if [ "${HTTP_CODE}" = "200" ]; then
             RELEASE_ID=$(jq -r '.id' /tmp/release.json)
+            UPLOAD_URL=$(jq -r '.upload_url' /tmp/release.json | sed 's/{.*}//')
             echo "✅ Release 已存在 (ID: ${RELEASE_ID})，将补充附件"
           else
             echo "🆕  创建新 Release..."
-            cat > /tmp/release-body.json << 'RELEASE_EOF'
+            cat > /tmp/release-body.json << RELEASE_EOF
           {
-            "tag_name": "${{ github.ref_name }}",
-            "name": "${{ needs.prepare.outputs.version }}",
-            "body": "Demo-Vue ${{ needs.prepare.outputs.version }} 各平台编译包，解压后直接运行。",
+            "tag_name": "${TAG}",
+            "name": "${VERSION}",
+            "body": "Demo-Vue ${VERSION} 各平台编译包，解压后直接运行。",
             "draft": false,
             "prerelease": false
           }
           RELEASE_EOF
             RESP=$(curl -s -X POST \
-              "${GITEA_URL}/api/v1/repos/${REPO}/releases" \
-              -H "Authorization: token ${RELEASE_TOKEN}" \
+              "${API_URL}/repos/${REPO}/releases" \
+              -H "${AUTH}" \
               -H "Content-Type: application/json" \
               -d @/tmp/release-body.json)
             RELEASE_ID=$(echo "${RESP}" | jq -r '.id // empty')
+            UPLOAD_URL=$(echo "${RESP}" | jq -r '.upload_url // empty' | sed 's/{.*}//')
             if [ -z "${RELEASE_ID}" ]; then
               echo "❌ 创建 Release 失败: ${RESP}"
               exit 1
@@ -287,14 +293,14 @@ jobs:
           # 上传附件
           echo "📤  上传附件..."
           PREV_ASSETS=$(curl -s \
-            -H "Authorization: token ${RELEASE_TOKEN}" \
-            "${GITEA_URL}/api/v1/repos/${REPO}/releases/${RELEASE_ID}/assets")
+            -H "${AUTH}" \
+            "${API_URL}/repos/${REPO}/releases/${RELEASE_ID}")
 
           for file in dist/packages/*; do
             [ -f "$file" ] || continue
             BASENAME=$(basename "$file")
 
-            EXISTS=$(echo "${PREV_ASSETS}" | jq -r ".[] | select(.name == \"${BASENAME}\") | .id")
+            EXISTS=$(echo "${PREV_ASSETS}" | jq -r ".assets[] | select(.name == \"${BASENAME}\") | .id")
             if [ -n "${EXISTS}" ]; then
               echo "⏩  跳过已有附件: ${BASENAME}"
               continue
@@ -302,13 +308,14 @@ jobs:
 
             echo "  → ${BASENAME}"
             curl -s -X POST \
-              "${GITEA_URL}/api/v1/repos/${REPO}/releases/${RELEASE_ID}/assets" \
-              -H "Authorization: token ${RELEASE_TOKEN}" \
-              -F "attachment=@${file}" > /dev/null
+              "${UPLOAD_URL}?name=${BASENAME}" \
+              -H "${AUTH}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"${file}" > /dev/null
           done
 
-          echo "✅  Release ${{ needs.prepare.outputs.version }} 附件处理完成"
-          echo "🔗  ${GITEA_URL}/${REPO}/releases/tag/${{ github.ref_name }}"
+          echo "✅  Release ${VERSION} 附件处理完成"
+          echo "🔗  https://github.com/${REPO}/releases/tag/${TAG}"
 
 
   # ==========================================
@@ -329,23 +336,23 @@ jobs:
           apt-get update -qq
           apt-get install -y -qq curl --no-install-recommends
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-windows_amd64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-linux_arm64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-linux_amd64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-darwin_arm64
           path: dist/packages/
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package-darwin_amd64
           path: dist/packages/
