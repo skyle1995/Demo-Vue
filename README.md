@@ -8,6 +8,11 @@
 [![Vite](https://img.shields.io/badge/Vite-7.1+-646CFF?logo=vite)](https://vitejs.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
+[![GitHub](https://img.shields.io/badge/GitHub-skyle1995/Demo--Vue-181717?logo=github)](https://github.com/skyle1995/Demo-Vue)
+[![Releases](https://img.shields.io/badge/Releases-GitHub%20Releases-181717?logo=github)](https://github.com/skyle1995/Demo-Vue/releases)
+
+> **仓库地址（GitHub）**：<https://github.com/skyle1995/Demo-Vue> ｜ **版本下载**：<https://github.com/skyle1995/Demo-Vue/releases>
+
 ---
 
 ## 功能特性
@@ -119,9 +124,12 @@ Demo-Vue/
 ### 克隆并启动
 
 ```bash
-# 克隆仓库
+# 克隆仓库（GitHub）
 git clone https://github.com/skyle1995/Demo-Vue.git
 cd Demo-Vue
+
+# 也可不克隆，直接从 GitHub Releases 下载对应平台压缩包
+# https://github.com/skyle1995/Demo-Vue/releases
 
 # 安装前端依赖
 cd frontend && pnpm install && cd ..
@@ -288,7 +296,11 @@ go run main.go server
 
 ## Git 版本发布（Tag）
 
-本项目的发布通常以 Tag 为触发点（例如在 CI/CD 中自动构建并创建 Release）。建议使用语义化版本号（SemVer），并统一以 `v` 前缀命名，例如 `v1.2.3`。
+本项目的发布通常以 Tag 为触发点：推送 `v*` Tag 后，由 GitHub Actions（[.github/workflows/act_runner.yml](./.github/workflows/act_runner.yml)）自动构建并在 **GitHub Releases** 生成对应版本。建议使用语义化版本号（SemVer），并统一以 `v` 前缀命名，例如 `v1.2.3`。
+
+- 仓库：<https://github.com/skyle1995/Demo-Vue>
+- 工作流运行记录：<https://github.com/skyle1995/Demo-Vue/actions>
+- 版本发布页：<https://github.com/skyle1995/Demo-Vue/releases>
 
 ### 发布一个 Tag 版本
 
@@ -345,13 +357,16 @@ git tag -a v1.2.3 <commit> -m "release: v1.2.3"
 git push origin v1.2.3
 ```
 
-如果远端已基于该 Tag 生成了 Release（例如 GitHub Release），通常也需要同步删除并重新创建对应 Release，避免附件与版本信息不一致。
+如果远端已基于该 Tag 生成了 Release（例如 GitHub Release），通常也需要同步删除并重新创建对应 Release，避免附件与版本信息不一致。GitHub 上的操作入口：仓库 → **Releases** → 选中该 Tag → **Delete release**（如需删除 Tag 本身，在 **Tags** 页面操作），之后重新推送 Tag 即会由 GitHub Actions 重新生成 Release。
+
+- Releases 页面：<https://github.com/skyle1995/Demo-Vue/releases>
+- Tags 页面：<https://github.com/skyle1995/Demo-Vue/tags>
 
 ---
 
 ## CI/CD Secrets 配置
 
-以下变量需在仓库 **Settings → Actions → Secrets** 中配置。
+以下变量需在 GitHub 仓库 **Settings → Actions → Secrets** 中配置（设置页：<https://github.com/skyle1995/Demo-Vue/settings/secrets/actions>）。
 
 ### 必选（缺一不可）
 

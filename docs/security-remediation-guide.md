@@ -2,6 +2,7 @@
 
 > 适用范围：基于 **Gin + golang-jwt/v5 + GORM** 的前后端分离管理后台（前端 Vue/React，后端纯 Bearer Token 鉴权）。
 > 本文档由一次实际安全审查整理而来，列出**已确认的真实问题**及其修复方案，并附**误报澄清**，供使用相同框架的项目逐项自查与整改。
+> 关联仓库（GitHub）：<https://github.com/skyle1995/Demo-Vue>
 
 ---
 

@@ -1,7 +1,8 @@
 # Demo-Vue JWT 认证机制说明
 
 > 适用范围：`Demo-Vue` 项目（admin 后台 + user 门户）  
-> 认证模式：OAuth2 风格的双 Token（Access + Refresh），纯 `Authorization: Bearer` 传输
+> 认证模式：OAuth2 风格的双 Token（Access + Refresh），纯 `Authorization: Bearer` 传输  
+> 仓库：<https://github.com/skyle1995/Demo-Vue>
 
 ---
 
