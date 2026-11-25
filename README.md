@@ -366,7 +366,7 @@ git push origin v1.2.3
 
 ## CI/CD Secrets 配置
 
-以下变量需在 GitHub 仓库 **Settings → Actions → Secrets** 中配置（设置页：<https://github.com/skyle1995/Demo-Vue/settings/secrets/actions>）。
+以下变量需在 GitHub 仓库 **Settings → Actions → Secrets** 中配置（需登录且具备仓库管理权限）。
 
 ### 必选（缺一不可）
 
